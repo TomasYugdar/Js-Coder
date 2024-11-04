@@ -1,59 +1,114 @@
-// Array para almacenar el historial de pagos
-let historialPagos = JSON.parse(localStorage.getItem('historialPagos')) || [];
+// Variables
+let manoCrupier = [];
+let manoJugador = [];
+let mazo = [];
+let puntuacionCrupier = 0;
+let puntuacionJugador = 0;
 
-// Función para agregar un pago al historial
-function agregarPago(montoTotal, numeroCuotas) {
-    let pago = {
-        montoTotal: montoTotal,
-        numeroCuotas: numeroCuotas,
-        montoPorCuota: montoTotal / numeroCuotas
-    };
-    historialPagos.push(pago); // Agregamos el pago al array
-    // Guardar historial en el localStorage
-    localStorage.setItem('historialPagos', JSON.stringify(historialPagos));
-    mostrarHistorialPagos();
+// Función para cargar el mazo desde el archivo JSON
+async function cargarMazo() {
+    try {
+        const respuesta = await fetch('data/mazo.json');
+        mazo = await respuesta.json();
+        mazo = mazo.sort(() => Math.random() - 0.5); // Mezcla el mazo después de cargarlo
+    } catch (error) {
+        console.error("Error al cargar el mazo:", error);
+    }
 }
 
-// Función para mostrar el historial de pagos en el DOM
-function mostrarHistorialPagos() {
-    const historialDiv = document.getElementById('historial');
-    historialDiv.innerHTML = ''; // Limpiar el historial previo
+// Función para calcular la puntuación de una mano
+function calcularPuntuacion(mano) {
+    let puntuacion = 0;
+    let cantidadAses = 0;
+    for (let carta of mano) {
+        if (carta.valor === "A") {
+            cantidadAses++;
+            puntuacion += 11;
+        } else if (["K", "Q", "J"].includes(carta.valor)) {
+            puntuacion += 10;
+        } else {
+            puntuacion += parseInt(carta.valor);
+        }
+    }
+    while (puntuacion > 21 && cantidadAses > 0) {
+        puntuacion -= 10;
+        cantidadAses--;
+    }
+    return puntuacion;
+}
 
-    historialPagos.forEach((pago, index) => {
-        const pagoElement = document.createElement('div');
-        pagoElement.className = 'pago';
-        pagoElement.textContent = `Pago ${index + 1}: Monto Total: $${pago.montoTotal.toFixed(2)}, Número de Cuotas: ${pago.numeroCuotas}, Monto por Cuota: $${pago.montoPorCuota.toFixed(2)}`;
-        historialDiv.appendChild(pagoElement);
+// Función para agregar cartas al DOM
+function mostrarCartas() {
+    const cartasCrupierDiv = document.getElementById("cartas-crupier");
+    const cartasJugadorDiv = document.getElementById("cartas-jugador");
+    cartasCrupierDiv.innerHTML = "";
+    cartasJugadorDiv.innerHTML = "";
+
+    manoCrupier.forEach(carta => {
+        const cartaDiv = document.createElement("div");
+        cartaDiv.textContent = `${carta.valor} de ${carta.palo}`;
+        cartasCrupierDiv.appendChild(cartaDiv);
     });
+
+    manoJugador.forEach(carta => {
+        const cartaDiv = document.createElement("div");
+        cartaDiv.textContent = `${carta.valor} de ${carta.palo}`;
+        cartasJugadorDiv.appendChild(cartaDiv);
+    });
+
+    document.getElementById("puntuacion-crupier").textContent = `Puntuación: ${puntuacionCrupier}`;
+    document.getElementById("puntuacion-jugador").textContent = `Puntuación: ${puntuacionJugador}`;
 }
 
-// Evento para calcular pagos al enviar el formulario
-document.getElementById('pagoForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Evitar que el formulario se envíe
-    const montoTotal = parseFloat(document.getElementById('montoTotal').value);
-    const numeroCuotas = parseInt(document.getElementById('numeroCuotas').value);
-    // Agrego el pago al historial
-    agregarPago(montoTotal, numeroCuotas);
-    
-    // Limpiar el formulario
-    document.getElementById('pagoForm').reset();
-});
-
-// Evento para filtrar pagos
-document.getElementById('filtrarPagosBtn').addEventListener('click', function() {
-    const montoMinimo = parseFloat(prompt("Ingresa el monto mínimo para filtrar:")); // Cambiar a un input en el futuro
-    const pagosFiltrados = filtrarPagosPorMonto(montoMinimo);
-    
-    // Mostrar resultados de filtro
-    const resultadoFiltradoDiv = document.createElement('div');
-    resultadoFiltradoDiv.innerHTML = `<strong>Pagos mayores a $${montoMinimo}:</strong> ${JSON.stringify(pagosFiltrados)}`;
-    document.getElementById('historial').appendChild(resultadoFiltradoDiv);
-});
-
-// Función para filtrar los pagos
-function filtrarPagosPorMonto(montoMinimo) {
-    return historialPagos.filter(pago => pago.montoTotal > montoMinimo);
+// Función para iniciar una nueva mano
+async function iniciarJuego() {
+    await cargarMazo();
+    manoCrupier = [mazo.pop(), mazo.pop()];
+    manoJugador = [mazo.pop(), mazo.pop()];
+    actualizarPuntuaciones();
+    mostrarCartas();
 }
 
-// Mostrar el historial al cargar la página
-mostrarHistorialPagos();
+// Actualizar las puntuaciones
+function actualizarPuntuaciones() {
+    puntuacionCrupier = calcularPuntuacion(manoCrupier);
+    puntuacionJugador = calcularPuntuacion(manoJugador);
+}
+
+// Función para el botón de "Pedir Carta"
+function pedirCarta() {
+    manoJugador.push(mazo.pop());
+    actualizarPuntuaciones();
+    mostrarCartas();
+
+    if (puntuacionJugador > 21) {
+        Swal.fire("Juego Terminado", "¡Te pasaste de 21!", "error");
+    }
+}
+
+// Función para el botón de "Plantarse"
+function plantarse() {
+    while (puntuacionCrupier < 17) {
+        manoCrupier.push(mazo.pop());
+        puntuacionCrupier = calcularPuntuacion(manoCrupier);
+    }
+    mostrarCartas();
+
+    if (puntuacionCrupier > 21) {
+        Swal.fire("¡Felicidades!", "El crupier se pasó de 21, ¡ganaste!", "success");
+    } else if (puntuacionCrupier > puntuacionJugador) {
+        Swal.fire("Juego Terminado", "¡El crupier gana!", "error");
+    } else if (puntuacionCrupier < puntuacionJugador) {
+        Swal.fire("¡Felicidades!", "¡Ganaste!", "success");
+    } else {
+        Swal.fire("Empate", "Nadie gana.", "info");
+    }
+}
+
+// Event Listeners
+document.getElementById("boton-pedir").addEventListener("click", pedirCarta);
+document.getElementById("boton-plantarse").addEventListener("click", plantarse);
+document.getElementById("boton-reiniciar").addEventListener("click", iniciarJuego);
+
+// Inicia el juego
+iniciarJuego();

@@ -1,37 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <title>PreEntrega2 - Tomas Yugdar</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
+
 <body>
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Simulador de Pagos</title>
-    </head>
-    <body>
-        <h1>Simulador de Pagos en Cuotas</h1>
-        <form class="formulario" id="pagoForm">
-            <label for="montoTotal">Monto Total:</label>
-            <input type="number" id="montoTotal" required min="0.01" step="0.01"><br>
-    
-            <label for="numeroCuotas">Número de Cuotas:</label>
-            <input type="number" id="numeroCuotas" required min="1"><br>
-    
-            <button type="submit">Calcular Pagos</button>
-        </form>
-    
-        <button id="filtrarPagosBtn">Filtrar Pagos</button>
-        
-        <h2>Historial de Pagos:</h2>
-        <div id="historial"></div>
-    
+    <div id="juego">
+        <h1>Blackjack</h1>
+        <div id="crupier">
+            <h2>Mano del Crupier</h2>
+            <div id="cartas-crupier"></div>
+            <p id="puntuacion-crupier">Puntuación: 0</p>
+        </div>
+        <div id="jugador">
+            <h2>Tu Mano</h2>
+            <div id="cartas-jugador"></div>
+            <p id="puntuacion-jugador">Puntuación: 0</p>
+        </div>
+        <div id="controles">
+            <button id="boton-pedir">Pedir Carta</button>
+            <button id="boton-plantarse">Plantarse</button>
+            <button id="boton-reiniciar">Nuevo Juego</button>
+        </div>
+    </div>
     <script src="main.js"></script>
 </body>
+
 </html>
